@@ -18,9 +18,11 @@ import {
 import { Input } from "@/components/ui/input";
 import CustomInput from "./CustomInput";
 import { authFormSchema } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 const AuthForm = ({ type }: { type: string }) => {
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof authFormSchema>>({
     resolver: zodResolver(authFormSchema),
     defaultValues: {
@@ -33,7 +35,9 @@ const AuthForm = ({ type }: { type: string }) => {
   function onSubmit(values: z.infer<typeof authFormSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
+    setIsLoading(true);
     console.log(values);
+    setIsLoading(false);
   }
   return (
     <section className="auth-form">
@@ -69,18 +73,29 @@ const AuthForm = ({ type }: { type: string }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <CustomInput
                 control={form.control}
-                name="username"
-                label="username"
-                placeholder="Enter your username"
+                name="email"
+                label="Email"
+                placeholder="Enter your email"
               />
 
               <CustomInput
                 control={form.control}
                 name="password"
-                label="password"
+                label="Password"
                 placeholder="Enter your password"
               />
-              <Button type="submit">Submit</Button>
+              <Button type="submit" className="form-btn">
+                {isLoading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    &nbsp;Loading...
+                  </>
+                ) : type === "sign-in" ? (
+                  "Sign in"
+                ) : (
+                  "Sign-up"
+                )}
+              </Button>
             </form>
           </Form>
         </>

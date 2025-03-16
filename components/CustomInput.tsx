@@ -4,12 +4,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Input } from "@/components/ui/input";
-import { Control, Form } from "react-hook-form";
+import { Control, FieldPath, Form } from "react-hook-form";
 import { FormControl, FormField, FormLabel, FormMessage } from "./ui/form";
 import { authFormSchema } from "@/lib/utils";
 interface CustomInput {
   control: Control<z.infer<typeof authFormSchema>>;
-  name: string;
+  name: FieldPath<z.infer<typeof authFormSchema>>;
   label: string;
   placeholder: string;
 }
@@ -17,7 +17,7 @@ const CustomInput = ({ control, name, label, placeholder }: CustomInput) => {
   return (
     <FormField
       control={control}
-      name="name"
+      name={name}
       render={({ field }) => (
         <div className="form-item">
           <FormLabel className="form-label">{label}</FormLabel>
@@ -26,6 +26,7 @@ const CustomInput = ({ control, name, label, placeholder }: CustomInput) => {
               <Input
                 placeholder={placeholder}
                 className="input-class"
+                type={name === "password" ? "password" : "text"}
                 {...field}
               ></Input>
             </FormControl>
