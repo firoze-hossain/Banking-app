@@ -8,17 +8,18 @@ import {
 import { date } from "zod";
 import { StyledString } from "next/dist/build/swc";
 import { useRouter } from "next/navigation";
+import { createLinkToken } from "@/lib/actions/user.actions";
 
 const PlaidLink = ({ user, variant }: PlaidLinkProps) => {
   const router = useRouter();
   const [token, setToken] = useState("");
   useEffect(() => {
     const getLinkToken = async () => {
-      //const data = await createLinkToken();
-      // setToken(data?.linkToken);
+      const data = await createLinkToken(user);
+      setToken(data?.linkToken);
     };
     getLinkToken();
-  }, []);
+  }, [user]);
   const onSuccess = useCallback<PlaidLinkOnSuccess>(
     async (public_token: string) => {
       // await exchangePublicToken({
