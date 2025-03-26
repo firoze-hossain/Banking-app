@@ -3,7 +3,7 @@
 import { ID } from "node-appwrite";
 import { createAdminClient, createSessionClient } from "../appwrite";
 import { cookies } from "next/headers";
-import { encryptId, parseStringify } from "../utils";
+import { encryptId, extractCustomerIdFromUrl, parseStringify } from "../utils";
 import {
   CountryCode,
   ProcessorTokenCreateRequest,
@@ -13,7 +13,7 @@ import {
 import { plaidClient } from "../plaid";
 import { error } from "console";
 import { revalidatePath } from "next/cache";
-import { addFundingSource } from "./dwolla.actions";
+import { addFundingSource, createDwollaCustomer } from "./dwolla.actions";
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
   APPWRITE_USER_COLLECTION_ID: USER_COLLECTION_ID,
@@ -75,8 +75,9 @@ export const signIn = async ({ email, password }: signInProps) => {
 
 export const signUp = async (userData: SignUpParams) => {
   const { email, password, firstName, lastName } = userData;
+  let newUserAccount;
   try {
-    const { account } = await createAdminClient();
+    const { account,database } = await createAdminClient();
 
     const newUserAccount = await account.create(
       ID.unique(),
@@ -84,6 +85,26 @@ export const signUp = async (userData: SignUpParams) => {
       password,
       `${firstName} ${lastName}`
     );
+    if(!newUserAccount){
+      throw new Error("Error creating user");
+    }
+    const dwollaCustomerUrl=await createDwollaCustomer({
+      ...userData,
+      type:"personal"
+    })
+    if(!dwollaCustomerUrl)throw new Error("Error creating Dwolla cutmer");
+    const dwollaCustomerId=extractCustomerIdFromUrl(dwollaCustomerUrl);
+    const newUser=await database.createDocument(
+      DATABASE_ID!,
+      USER_COLLECTION_ID!,
+      ID.unique(),{
+        ...userData,
+        userId:newUserAccount.$id,
+        dwollaCustomerId,
+        dwollaCustomerUrl
+      }
+
+    )
     const session = await account.createEmailPasswordSession(email, password);
 
     // Set the session cookie
@@ -94,7 +115,7 @@ export const signUp = async (userData: SignUpParams) => {
       secure: true,
     });
 
-    return parseStringify(newUserAccount);
+    return parseStringify(newUser);
   } catch (error) {
     console.log("Error", error);
   }
